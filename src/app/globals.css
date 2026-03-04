@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 195 81% 60%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 195 53% 79%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 240 100% 92%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 195 81% 60%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  /* Hide app-level scrollbar globally */
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pdf-drop-zone {
+  @apply relative border-2 border-dashed transition-all duration-300;
+  border-color: hsl(var(--muted));
+}
+
+.pdf-drop-zone.active {
+  border-color: hsl(var(--primary));
+  background: hsla(var(--primary), 0.05);
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Force react-pdf pages to be fully opaque.
+   canvasBackground prop only fills the <canvas> — the wrapper div
+   can still be transparent and show the site background through.
+   Using #0d0d0d matches the dark mode conversion preventing blinding flashes. */
+.react-pdf__Page {
+  background: #0d0d0d !important;
+}
+
+.react-pdf__Page__canvas {
+  background: #0d0d0d !important;
+}
