@@ -8,36 +8,92 @@ import { Processor } from '@/components/pdf/Processor';
 import { convertPdfToDarkTheme, ProcessingProgress } from '@/lib/pdf-processor';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
+import JSZip from 'jszip';
+
+function removePdfExtension(fileName: string) {
+  return fileName.replace(/\.[^/.]+$/, '');
+}
+
+function buildArchiveEntryName(fileName: string) {
+  return `PDFark-Converted/${removePdfExtension(fileName)}-Dark.pdf`;
+}
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState<ProcessingProgress | null>(null);
   const [resultBytes, setResultBytes] = useState<Uint8Array | null>(null);
+  const [archiveBlob, setArchiveBlob] = useState<Blob | null>(null);
+  const [downloadName, setDownloadName] = useState<string | null>(null);
 
   // Custom Toast State
   const [showToast, setShowToast] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleFileSelect = async (selectedFile: File) => {
-    setFile(selectedFile);
+  const handleFilesSelect = async (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
+    setProgress({ stage: 'parsing', percentage: 1, message: 'Starting conversion...' });
+    setResultBytes(null);
+    setArchiveBlob(null);
+    setDownloadName(null);
+
     try {
-      const bytes = await convertPdfToDarkTheme(selectedFile, (p) => setProgress(p));
-      setResultBytes(bytes);
+      if (selectedFiles.length === 1) {
+        const [selectedFile] = selectedFiles;
+        const bytes = await convertPdfToDarkTheme(selectedFile, (p) => setProgress(p));
+        setResultBytes(bytes);
+        setDownloadName(`${removePdfExtension(selectedFile.name)}-Dark.pdf`);
+        return;
+      }
+
+      const zip = new JSZip();
+      const totalFiles = selectedFiles.length;
+
+      for (let index = 0; index < totalFiles; index += 1) {
+        const selectedFile = selectedFiles[index];
+        const filePrefix = `${index + 1}/${totalFiles}`;
+        setProgress({
+          stage: 'parsing',
+          percentage: Math.max(1, Math.round((index / totalFiles) * 100)),
+          message: `Preparing ${filePrefix}: ${selectedFile.name}`,
+        });
+
+        const bytes = await convertPdfToDarkTheme(selectedFile, (p) => {
+          const combinedPercentage = ((index + (p.percentage / 100)) / totalFiles) * 100;
+
+          setProgress({
+            stage: 'converting',
+            percentage: Math.min(99, combinedPercentage),
+            message: `${filePrefix}: ${p.message}`,
+          });
+        });
+
+        zip.file(buildArchiveEntryName(selectedFile.name), bytes);
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      setArchiveBlob(blob);
+      setDownloadName(`PDFark-Bulk-Converted-${Date.now()}.zip`);
+      setProgress({
+        stage: 'completed',
+        percentage: 100,
+        message: `Converted ${totalFiles} PDFs into a ZIP archive.`,
+      });
     } catch (error) {
       console.error('Processing failed:', error);
     }
   };
 
   const handleDownload = () => {
-    if (!resultBytes || !file) return;
+    if (!downloadName) return;
 
-    const blob = new Blob([resultBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+    const blob = archiveBlob ?? (resultBytes ? new Blob([resultBytes.buffer as ArrayBuffer], { type: 'application/pdf' }) : null);
+    if (!blob) return;
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
 
-    const originalName = file.name.replace(/\.[^/.]+$/, "");
-    link.download = `${originalName}-Dark.pdf`;
+    link.download = downloadName;
 
     document.body.appendChild(link);
     link.click();
@@ -54,21 +110,27 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    setFile(null);
+    setFiles([]);
     setProgress(null);
     setResultBytes(null);
+    setArchiveBlob(null);
+    setDownloadName(null);
   };
 
   // Called by "Convert Another" — resets state and immediately starts the new file
-  const handleNewFile = (newFile: File) => {
-    setFile(null);
+  const handleNewFile = (newFiles: File[]) => {
+    setFiles([]);
     setProgress(null);
     setResultBytes(null);
+    setArchiveBlob(null);
+    setDownloadName(null);
     // Kick off conversion in the next tick so state clears first
-    setTimeout(() => handleFileSelect(newFile), 0);
+    setTimeout(() => handleFilesSelect(newFiles), 0);
   };
 
-  const isProcessing = !!file && !!progress;
+  const isProcessing = files.length > 0;
+  const isBulk = files.length > 1;
+  const selectedFileName = isBulk ? `${files.length} PDF files` : files[0]?.name ?? '';
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
@@ -88,14 +150,16 @@ export default function Home() {
         {!isProcessing && (
           <div className="w-full max-w-4xl">
             <PDFarkHeader />
-            <Uploader onFileSelect={handleFileSelect} />
+            <Uploader onFilesSelect={handleFilesSelect} />
           </div>
         )}
 
         {isProcessing && (
           <Processor
             progress={progress!}
-            fileName={file!.name}
+            fileName={selectedFileName}
+            fileCount={files.length}
+            isBulk={isBulk}
             onDownload={handleDownload}
             onReset={handleReset}
             onNewFile={handleNewFile}

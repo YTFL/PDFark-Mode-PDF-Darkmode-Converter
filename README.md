@@ -11,12 +11,13 @@
 - **Privacy First**: Processing happens directly in your browser. No files are uploaded to any server. Your documents are perfectly secure.
 - **Modern UI/UX**: Designed for a smooth, app-like experience.
 - **Fast and Reliable**: Accurate PDF generation right within your browser.
+- **Bulk Conversion**: Convert multiple PDFs in one pass and download the results as a neatly organized ZIP archive.
 
 ## How to Use
 1. Open the [PDFark-Mode Website](https://pdfark-mode.vercel.app/).
-2. Click to upload or drag and drop your PDF file.
+2. Click to upload or drag and drop one or more PDF files.
 3. Wait for the processing to complete.
-4. Download your newly generated PDF.
+4. Download your newly generated PDF, or a ZIP archive when converting multiple files.
 
 ## For Developers
 If you are interested in seeing how the app works behind the scenes, contributing, or wanting to set it up locally, please refer to the [Technical Details](TECHNICAL_DETAILS.md) and [Contributing Guidelines](CONTRIBUTING.md).

@@ -7,11 +7,11 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UploaderProps {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
   disabled?: boolean;
 }
 
-export const Uploader: React.FC<UploaderProps> = ({ onFileSelect, disabled }) => {
+export const Uploader: React.FC<UploaderProps> = ({ onFilesSelect, disabled }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,13 +26,17 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelect, disabled }) =>
     setIsDragging(false);
   }, []);
 
-  const validateAndSelect = (file: File) => {
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a valid PDF file.');
+  const validateAndSelect = (files: File[]) => {
+    if (files.length === 0) return;
+
+    const invalidFile = files.find((file) => file.type !== 'application/pdf');
+    if (invalidFile) {
+      setError('Please upload PDF files only.');
       return;
     }
+
     setError(null);
-    onFileSelect(file);
+    onFilesSelect(files);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -40,13 +44,13 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelect, disabled }) =>
     if (disabled) return;
     setIsDragging(false);
     
-    const file = e.dataTransfer.files[0];
-    if (file) validateAndSelect(file);
-  }, [disabled, onFileSelect]);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) validateAndSelect(files);
+  }, [disabled, onFilesSelect]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) validateAndSelect(file);
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) validateAndSelect(files);
   };
 
   return (
@@ -65,7 +69,8 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelect, disabled }) =>
         <input
           id="fileInput"
           type="file"
-          accept=".pdf"
+          accept=".pdf,application/pdf"
+          multiple
           className="hidden"
           onChange={handleFileInput}
           disabled={disabled}
@@ -79,10 +84,10 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelect, disabled }) =>
         </div>
         
         <h3 className="text-xl font-semibold mb-2 text-white">
-          {isDragging ? "Drop your PDF here" : "Upload PDF"}
+          {isDragging ? "Drop your PDFs here" : "Upload PDF files"}
         </h3>
         <p className="text-sm text-muted-foreground text-center">
-          Drag and drop or click to browse files
+          Drag and drop or click to browse one or more PDF files
         </p>
       </div>
 

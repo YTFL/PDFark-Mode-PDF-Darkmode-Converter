@@ -29,18 +29,21 @@ interface ProcessorProps {
   progress: ProcessingProgress;
   onDownload: () => void;
   onReset: () => void;
-  onNewFile: (file: File) => void;
+  onNewFile: (files: File[]) => void;
   fileName: string;
+  fileCount: number;
+  isBulk: boolean;
   resultBytes: Uint8Array | null;
 }
 
 
-export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onReset, onNewFile, fileName, resultBytes }) => {
+export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onReset, onNewFile, fileName, fileCount, isBulk, resultBytes }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCompleted = progress.stage === 'completed';
   const isError = progress.stage === 'error';
   const isProcessing = progress.stage === 'parsing' || progress.stage === 'converting';
+  const showPreview = isCompleted && !isBulk && !!resultBytes;
 
   const handleConvertAnother = () => {
     // Reset the input value so the same file can be selected again
@@ -49,8 +52,8 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) onNewFile(f);
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) onNewFile(files);
   };
 
   return (
@@ -60,6 +63,7 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
         ref={fileInputRef}
         type="file"
         accept="application/pdf,.pdf"
+        multiple
         className="hidden"
         onChange={handleFileInputChange}
       />
@@ -69,15 +73,15 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           "w-full transition-all duration-500 ease-in-out",
-          isCompleted ? "" : "max-w-2xl mx-auto"
+          showPreview ? "" : "max-w-2xl mx-auto"
         )}
       >
         <div className={cn(
           "grid gap-5 lg:gap-8",
-          isCompleted ? "lg:grid-cols-[400px_1fr]" : "grid-cols-1"
+          showPreview ? "lg:grid-cols-[400px_1fr]" : "grid-cols-1 justify-items-center"
         )}>
           {/* Status Card */}
-          <div className="flex flex-col gap-6 min-w-0">
+          <div className={cn("flex flex-col gap-6 min-w-0", showPreview ? "" : "w-full max-w-xl") }>
             <div className="p-5 sm:p-8 rounded-3xl bg-card border border-border shadow-2xl h-fit">
               <div className="flex items-center gap-3 w-full pb-4 border-b border-border">
                 <div className="p-2 rounded-lg bg-primary/10">
@@ -85,7 +89,9 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-sm font-medium text-white truncate">{fileName}</p>
-                  <p className="text-xs text-muted-foreground">PDF Document</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isBulk ? `${fileCount} PDFs packaged into one ZIP archive` : 'PDF Document'}
+                  </p>
                 </div>
               </div>
 
@@ -107,8 +113,12 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
                       <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
                         <CheckCircle2 className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="text-2xl font-bold text-white">Conversion Ready</h3>
-                      <p className="text-muted-foreground text-sm">Professional Amoled theme applied.</p>
+                      <h3 className="text-2xl font-bold text-white">
+                        {isBulk ? 'ZIP Archive Ready' : 'Conversion Ready'}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {isBulk ? 'All converted PDFs are organized inside a downloadable ZIP file.' : 'Professional Amoled theme applied.'}
+                      </p>
                     </div>
 
                     <div className="flex flex-col gap-3 w-full">
@@ -117,7 +127,7 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
                         className="w-full h-12 rounded-xl text-lg font-semibold bg-primary hover:bg-primary/90 text-black transition-all active:scale-95"
                       >
                         <Download className="w-5 h-5 mr-2" />
-                        Download PDF
+                        {isBulk ? 'Download ZIP' : 'Download PDF'}
                       </Button>
                       <Button
                         variant="outline"
@@ -149,7 +159,7 @@ export const Processor: React.FC<ProcessorProps> = ({ progress, onDownload, onRe
 
           {/* Preview Panel */}
           <AnimatePresence>
-            {isCompleted && resultBytes && (
+            {showPreview && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
