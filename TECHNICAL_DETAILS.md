@@ -13,6 +13,7 @@ The application is built using modern web development tools:
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
 - **PDF Manipulation**: [pdf-lib](https://pdf-lib.js.org/) and [pdfjs-dist](https://mozilla.github.io/pdf.js/)
+- **Bulk Packaging**: [JSZip](https://stuk.github.io/jszip/) for bundling multiple converted PDFs into a single ZIP download
 - **Language**: TypeScript
 
 ## Getting Started Locally
@@ -54,5 +55,8 @@ Open [http://localhost:3000](http://localhost:3000) (or the port specified in yo
 ## Architecture & Implementation Overview
 
 - **Conversion Logic**: The conversion of bright PDFs to a dark theme is strictly client-side. The app parses the PDF properties directly in the user's browser via `pdf-lib` and updates stroke, fill, and annotation colors to match a dark interface.
+- **Bulk Conversion**: Multiple PDF uploads are processed sequentially on the client. Single-file conversions download as PDFs, while bulk conversions are packaged into a ZIP archive with files organized under `PDFark-Converted/`.
+- **Preview Behavior**: The preview panel is shown only for single-file conversions. Bulk conversions skip preview to keep the layout focused on the ZIP download state.
 - **Client-Side Processing**: No servers are employed to process the files. This relies entirely on browser engines.
 - **UI Theme Configuration**: The application leverages custom CSS variables managed by Tailwind utilities. Theming tokens like backgrounds and primary/accent colors map directly to Next.js setup within `tailwind.config.ts`.
+- **Build Output**: The project uses the Next.js App Router only. The previous PWA/service-worker layer was removed, and the app now ships a standard app-router build with an SVG app icon.

@@ -15,7 +15,7 @@ This document is intended for the repository owner setting up the project on Git
 - `Fast, secure, and client-side PDF dark mode conversion.`
 
 ## Repository Description (Copy-paste to GitHub)
-`Turn any PDF into a clean dark mode or standard light theme instantly. A private, client-side PDF mode converter built for late-night readers and traditional viewing.`
+`Turn any PDF into a clean dark mode or standard light theme instantly. A private, client-side PDF mode converter with bulk ZIP export for late-night readers and traditional viewing.`
 
 ## Website
 `https://pdfark-mode.vercel.app/`
@@ -33,3 +33,5 @@ Add these tags directly via the UI on GitHub (the "gear" icon in the About secti
 - `privacy-focused`
 - `client-side`
 - `web-app`
+- `bulk-conversion`
+- `zip`
